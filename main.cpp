@@ -8,6 +8,8 @@
 #include <string>
 #include <algorithm>
 
+//testing commit function
+
 #define M_PI 3.14159265358979323846 /* pi */
 
 using namespace std;
@@ -27,6 +29,7 @@ public:
     //virtual void compInfo(double)=0; // Component info
     //virtual bool getNested()=0; // get nested bool
 };
+
 
 //CONCRETE RESISTOR CLASS
 class resistor : public component
@@ -316,7 +319,7 @@ public:
 
     vector<string> info(); // generate and print circuit info
 
-    
+
 
     ~circuit() {} // circuit destructor
 };
@@ -745,7 +748,7 @@ int main()
      for (int i = 0; i != NODEList.size(); ++i)
     {
         cout << NODEList.at(i) << endl;
-    } 
+    }
 
     return 0;
 }
