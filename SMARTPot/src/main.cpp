@@ -17,8 +17,8 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 // Network credentials
-const char *ssid = "Daniels_WiFi";
-const char *password = "Rebel1x1";
+const char *ssid = "REPLACE_WITH_SSID";
+const char *password = "REPLACE_WITH_PASSWORD";
 
 // STRUCTURE
 xQueueHandle duty_queue;
