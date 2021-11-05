@@ -1,0 +1,72 @@
+
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        display: inline-block;
+        margin: 0px auto;
+        text-align: center;
+      }
+
+      h2 {
+        font-size: 3rem;
+        line-height: 10px;
+        margin-top: 100;
+      }
+      p {
+        font-size: 3rem;
+      }
+      body {
+        max-width: 600px;
+        margin: 0px auto;
+        padding-bottom: 25px;
+      }
+
+      fieldset {
+        margin: 10px;
+        border: 3px solid silver;
+        padding: 15px;
+        border-radius: 50px;
+      }
+
+      legend {
+        padding: 2px;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 120px;
+        height: 68px;
+      }
+      .switch input {
+        display: none;
+      }
+      .slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        border-radius: 34px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 52px;
+        width: 52px;
+        left: 8px;
+        bottom: 8px;
+        background-color: #fff;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+        border-radius: 68px;
+      }
+
+      input:checked + .slider {
+        background-color: #3ee6a0;
+      }
+      input:checked + .slider:before {
+        -webkit-transform: translateX(52px);
+        -ms-transform: translateX(52px);
+        transform: translateX(52px);
+      }

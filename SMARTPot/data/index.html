@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+  <head>
+    <title>SMARTPot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <link rel = "stylesheet" type = "text/css" href = "style.css"/>
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
+
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="script.js"></script>
+
+  </head>
+  <body>
+    <h2>SMARTPot</h2>
+    <fieldset>
+      <h4>AUTO</h4>
+      <label class="switch">
+        <input type="checkbox" onchange="toggleCheckbox(this)" id="0" /><span
+          class="slider"
+        ></span>
+      </label>
+
+      <h4>WATER</h4>
+      <label class="switch">
+        <input type="checkbox" onchange="toggleCheckbox(this)" id="13" /><span
+          class="slider"
+        ></span>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <p>
+        <i class="fas fa-thermometer-half" style="color: #059e8a"></i>
+        <span class="dht-labels">Temperature</span>
+        <span id="temperature"></span>
+        <sup class="units">&deg;C</sup>
+      </p>
+      <p>
+        <i class="fas fa-tint" style="color: #00add6"></i>
+        <span class="dht-labels">Humidity</span>
+        <span id="humidity"></span>
+        <sup class="units">&percnt;</sup>
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <div id="chart-temperature" class="container"></div>
+      <div id="chart-humidity" class="container"></div>
+    </fieldset>
+ </body>
+
+ <script>
+    var chartT = new Highcharts.Chart({
+    chart: { renderTo: "chart-temperature" },
+    title: { text: "Temperature" },
+    series: [
+      {
+        showInLegend: false,
+        data: [],
+      },
+    ],
+    plotOptions: {
+      line: { animation: false, dataLabels: { enabled: true } },
+      series: { color: "#059e8a" },
+    },
+    xAxis: {
+      type: "datetime",
+      dateTimeLabelFormats: { second: "%H:%M:%S" },
+    },
+    yAxis: {
+      title: { text: "Temperature (Celsius)" },
+      //title: { text: 'Temperature (Fahrenheit)' }
+    },
+    credits: { enabled: false },
+  });
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        var x = new Date().getTime(),
+          y = parseFloat(this.responseText);
+        //console.log(this.responseText);
+        if (chartT.series[0].data.length > 40) {
+          chartT.series[0].addPoint([x, y], true, true, true);
+        } else {
+          chartT.series[0].addPoint([x, y], true, false, true);
+        }
+      }
+    };
+    xhttp.open("GET", "/temperature", true);
+    xhttp.send();
+  }, 10000);
+
+
+  var chartH = new Highcharts.Chart({
+    chart: { renderTo: "chart-humidity" },
+    title: { text: "Humidity" },
+    series: [
+      {
+        showInLegend: false,
+        data: [],
+      },
+    ],
+    plotOptions: {
+      line: { animation: false, dataLabels: { enabled: true } },
+    },
+    xAxis: {
+      type: "datetime",
+      dateTimeLabelFormats: { second: "%H:%M:%S" },
+    },
+    yAxis: {
+      title: { text: "Humidity (%)" },
+    },
+    credits: { enabled: false },
+  });
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        var x = new Date().getTime(),
+          y = parseFloat(this.responseText);
+        //console.log(this.responseText);
+        if (chartH.series[0].data.length > 40) {
+          chartH.series[0].addPoint([x, y], true, true, true);
+        } else {
+          chartH.series[0].addPoint([x, y], true, false, true);
+        }
+      }
+    };
+    xhttp.open("GET", "/humidity", true);
+    xhttp.send();
+  }, 10000);
+ </script>
