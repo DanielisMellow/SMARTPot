@@ -5,7 +5,7 @@
 #include <SPIFFS.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
-
+//yeet
 // Define
 #define RELAY 13
 #define AUTO 0
