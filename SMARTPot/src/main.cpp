@@ -17,7 +17,7 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 // Network credentials
-const char *ssid = "Hotspot";
+const char *ssid = "Daniels_WiFi";
 const char *password = "Rebel1x1";
 
 // STRUCTURE
