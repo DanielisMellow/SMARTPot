@@ -120,11 +120,14 @@ void TaskRelay(void *pvParameters) // This is a task.
       Serial.println(ADC_READINGS.auton);
       if (ADC_READINGS.auton == 1) // Autonomous mode is activated, relay is on/off by ADC values
       {
+        //Soil is Dry and Requires water
         if (ADC_READINGS.adc_raw > 2000)
         {
           digitalWrite(13, HIGH);
         }
-        else if (ADC_READINGS.adc_raw < 1700)
+
+        //Soil has sufficient amounts of water the water pump should be turned off
+        else if (ADC_READINGS.adc_raw < 1500)
         {
           digitalWrite(13, LOW);
         }
