@@ -5,11 +5,13 @@
 #include <SPIFFS.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
-//yeet
+
 // Define
 #define RELAY 13
 #define AUTO 0
 #define DHTPIN 27 // Digital pin connected to the DHT sensor
+#define BLUE 12
+#define GREEN 14
 
 // Uncomment the type of sensor in use:
 #define DHTTYPE DHT22 // DHT 22 (AM2302)
@@ -120,30 +122,40 @@ void TaskRelay(void *pvParameters) // This is a task.
       Serial.println(ADC_READINGS.auton);
       if (ADC_READINGS.auton == 1) // Autonomous mode is activated, relay is on/off by ADC values
       {
-        //Soil is Dry and Requires water
+        digitalWrite(GREEN, HIGH);
+        // Soil is Dry and Requires water
         if (ADC_READINGS.adc_raw > 2000)
         {
           digitalWrite(13, HIGH);
+          digitalWrite(BLUE, HIGH);
         }
 
-        //Soil has sufficient amounts of water the water pump should be turned off
+        // Soil has sufficient amounts of water the water pump should be turned off
         else if (ADC_READINGS.adc_raw < 1500)
         {
           digitalWrite(13, LOW);
+          digitalWrite(BLUE, LOW);
         }
       }
       else // Autonomous mode is off, relay is controlled by water button
       {
-        // if(ADC_READINGS.adc_raw > 2500 || ADC_READINGS.soaking == 1)
         if (ADC_READINGS.soaking == 1)
         {
-          // CAPACITIVE SOIL sensor is dry turn on water pump
+          // TURN ON WATER PUMP
           digitalWrite(13, HIGH);
+          digitalWrite(BLUE, HIGH);
         }
-        // if(ADC_READINGS.adc_raw < 2400 && ADC_READINGS.soaking == 0)
-        if (ADC_READINGS.soaking == 0)
+        else if (ADC_READINGS.soaking == 0)
         {
           digitalWrite(13, LOW);
+          // TURN OFF WATER PUMP
+          digitalWrite(BLUE, LOW);
+        }
+
+        if (ADC_READINGS.auton == 0)
+        {
+          // digitalWrite(13, LOW);
+          digitalWrite(GREEN, LOW);
         }
       }
     }
@@ -155,6 +167,13 @@ void setup()
   Serial.begin(115200);
   pinMode(RELAY, OUTPUT);
   digitalWrite(RELAY, LOW);
+
+  pinMode(BLUE, OUTPUT);
+  digitalWrite(BLUE, LOW);
+
+  pinMode(GREEN, OUTPUT);
+  digitalWrite(GREEN, LOW);
+
   dht.begin();
 
   // Create A Queue
