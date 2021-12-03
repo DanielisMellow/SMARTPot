@@ -4,19 +4,19 @@
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
 #include <Adafruit_Sensor.h>
-#include <DHT.h>
+#include <Adafruit_BME280.h>
+#include <Wire.h>
 
 // Define
 #define RELAY 13
 #define AUTO 0
-#define DHTPIN 27 // Digital pin connected to the DHT sensor
 #define BLUE 12
 #define GREEN 14
 
 // Uncomment the type of sensor in use:
-#define DHTTYPE DHT22 // DHT 22 (AM2302)
+//#define DHTTYPE DHT22 // DHT 22 (AM2302)
 
-DHT dht(DHTPIN, DHTTYPE);
+Adafruit_BME280 bme; 
 
 // Network credentials
 const char *ssid = "Daniels_WiFi";
@@ -41,17 +41,18 @@ const char *PARAM_INPUT_2 = "state";
 AsyncWebServer server(80);
 
 // FUNCTIONS TO UPDATE STATS
-String readDHTTemperature()
+String readBME280Temperature()
 {
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
+  float t = bme.readTemperature();
+  //t = t * 1.8 + 32; 
   // Read temperature as Fahrenheit (isFahrenheit = true)
   // float t = dht.readTemperature(true);
   // Check if any reads failed and exit early (to try again).
   if (isnan(t))
   {
-    Serial.println("Failed to read from DHT sensor!");
+    Serial.println("Failed to read from BME280 sensor!");
     return "--";
   }
   else
@@ -61,13 +62,13 @@ String readDHTTemperature()
   }
 }
 
-String readDHTHumidity()
+String readBME280Humidity()
 {
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
+  float h = bme.readHumidity();
   if (isnan(h))
   {
-    Serial.println("Failed to read from DHT sensor!");
+    Serial.println("Failed to read from BME280 sensor!");
     return "--";
   }
   else
@@ -124,14 +125,14 @@ void TaskRelay(void *pvParameters) // This is a task.
       {
         digitalWrite(GREEN, HIGH);
         // Soil is Dry and Requires water
-        if (ADC_READINGS.adc_raw > 2000)
+        if (ADC_READINGS.adc_raw > 1750)
         {
           digitalWrite(13, HIGH);
           digitalWrite(BLUE, HIGH);
         }
 
         // Soil has sufficient amounts of water the water pump should be turned off
-        else if (ADC_READINGS.adc_raw < 1500)
+        else if (ADC_READINGS.adc_raw < 1600)
         {
           digitalWrite(13, LOW);
           digitalWrite(BLUE, LOW);
@@ -174,7 +175,13 @@ void setup()
   pinMode(GREEN, OUTPUT);
   digitalWrite(GREEN, LOW);
 
-  dht.begin();
+  bool status; 
+  status = bme.begin(0x76); 
+  if(!status)
+  {
+    Serial.println("Could not find valid BME280 sensor");
+    while(1);    
+  }
 
   // Create A Queue
   duty_queue = xQueueCreate(10, sizeof(xData));
@@ -206,9 +213,9 @@ void setup()
             { request->send(SPIFFS, "/script.js", "text/javascript"); });
 
   server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send_P(200, "text/plain", readDHTTemperature().c_str()); });
+            { request->send_P(200, "text/plain", readBME280Temperature().c_str()); });
   server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send_P(200, "text/plain", readDHTHumidity().c_str()); });
+            { request->send_P(200, "text/plain", readBME280Humidity().c_str()); });
 
   xTaskCreatePinnedToCore(
       TaskAnalogReadA6, "AnalogReadA6", 2048 // Stack size
