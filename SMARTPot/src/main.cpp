@@ -19,7 +19,7 @@
 Adafruit_BME280 bme; 
 
 // Network credentials
-const char *ssid = "Daniels_WiFi";
+const char *ssid = "Hotspot";
 const char *password = "Rebel1x1";
 
 // STRUCTURE
