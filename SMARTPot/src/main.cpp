@@ -16,10 +16,10 @@
 // Uncomment the type of sensor in use:
 //#define DHTTYPE DHT22 // DHT 22 (AM2302)
 
-Adafruit_BME280 bme; 
+Adafruit_BME280 bme;
 
 // Network credentials
-const char *ssid = "Hotspot";
+const char *ssid = "Daniels_WiFi";
 const char *password = "Rebel1x1";
 
 // STRUCTURE
@@ -46,10 +46,10 @@ String readBME280Temperature()
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   // Read temperature as Celsius (the default)
   float t = bme.readTemperature();
-  //t = t * 1.8 + 32; 
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  // float t = dht.readTemperature(true);
-  // Check if any reads failed and exit early (to try again).
+  // t = t * 1.8 + 32;
+  //  Read temperature as Fahrenheit (isFahrenheit = true)
+  //  float t = dht.readTemperature(true);
+  //  Check if any reads failed and exit early (to try again).
   if (isnan(t))
   {
     Serial.println("Failed to read from BME280 sensor!");
@@ -125,7 +125,7 @@ void TaskRelay(void *pvParameters) // This is a task.
       {
         digitalWrite(GREEN, HIGH);
         // Soil is Dry and Requires water
-        if (ADC_READINGS.adc_raw > 1750)
+        if (ADC_READINGS.adc_raw > 1650)
         {
           digitalWrite(13, HIGH);
           digitalWrite(BLUE, HIGH);
@@ -175,12 +175,13 @@ void setup()
   pinMode(GREEN, OUTPUT);
   digitalWrite(GREEN, LOW);
 
-  bool status; 
-  status = bme.begin(0x76); 
-  if(!status)
+  bool status;
+  status = bme.begin(0x76);
+  if (!status)
   {
     Serial.println("Could not find valid BME280 sensor");
-    while(1);    
+    while (1)
+      ;
   }
 
   // Create A Queue
