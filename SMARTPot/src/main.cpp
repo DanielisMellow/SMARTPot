@@ -19,8 +19,8 @@
 Adafruit_BME280 bme;
 
 // Network credentials
-const char *ssid = "Daniels_WiFi";
-const char *password = "Rebel1x1";
+const char *ssid = "SSID";
+const char *password = "PASSWORD";
 
 // STRUCTURE
 xQueueHandle duty_queue;
@@ -237,31 +237,35 @@ void setup()
 
   server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-  String inputMessage1;
-  String inputMessage2;
-  // GET input1 value on <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
-  if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2)) {
-    inputMessage1 = request->getParam(PARAM_INPUT_1)->value();
-    inputMessage2 = request->getParam(PARAM_INPUT_2)->value();
-    //digitalWrite(inputMessage1.toInt(), inputMessage2.toInt());
-    
-    if(inputMessage1.toInt() == RELAY){
-      ADC_READINGS.soaking = inputMessage2.toInt();
-    }
-    if(inputMessage1.toInt() == AUTO){
-      ADC_READINGS.auton = inputMessage2.toInt(); 
-    }
-    
-  }
-  else {
-    inputMessage1 = "No message sent";
-    inputMessage2 = "No message sent";
-  }
-  Serial.print("Toggle Switch: ");
-  Serial.print(inputMessage1);
-  Serial.print(" - Set to: ");
-  Serial.println(inputMessage2);
-  request->send(200, "text/plain", "OK"); });
+              String inputMessage1;
+              String inputMessage2;
+              // GET input1 value on <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
+              if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2))
+              {
+                inputMessage1 = request->getParam(PARAM_INPUT_1)->value();
+                inputMessage2 = request->getParam(PARAM_INPUT_2)->value();
+                //digitalWrite(inputMessage1.toInt(), inputMessage2.toInt());
+
+                if (inputMessage1.toInt() == RELAY)
+                {
+                  ADC_READINGS.soaking = inputMessage2.toInt();
+                }
+                if (inputMessage1.toInt() == AUTO)
+                {
+                  ADC_READINGS.auton = inputMessage2.toInt();
+                }
+              }
+              else
+              {
+                inputMessage1 = "No message sent";
+                inputMessage2 = "No message sent";
+              }
+              Serial.print("Toggle Switch: ");
+              Serial.print(inputMessage1);
+              Serial.print(" - Set to: ");
+              Serial.println(inputMessage2);
+              request->send(200, "text/plain", "OK");
+            });
 
   // Start server
   server.begin();
