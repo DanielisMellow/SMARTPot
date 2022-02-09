@@ -9,5 +9,9 @@ Features:
   -Solar Powered Battery Bank(Ideal for window Seated plants)
   -Webpage Graphic User Interface
   
- Smart Pot:
+  
+ SmartPot:
 ![IMG_4085](https://user-images.githubusercontent.com/82124061/153272789-2df4694a-e000-48f3-9959-a7e7cce7b357.jpg)
+
+Graphic User Interface: 
+![GUI](https://user-images.githubusercontent.com/82124061/153277552-153ed56f-00fd-4204-a495-f35f5df36e99.png)
