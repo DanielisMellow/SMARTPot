@@ -7,6 +7,16 @@
 #include <Adafruit_BME280.h>
 #include <Wire.h>
 
+// Macros For Debugging
+#define DEBUG 1
+#if DEBUG == 1
+#define debug(x) Serial.print(x)
+#define debugln(x) Serial.println(x)
+#else
+#define debug(x)
+#define debugln(x)
+#endif
+
 // Define
 #define RELAY 13
 #define AUTO 0
@@ -14,15 +24,15 @@
 #define GREEN 14
 
 // Uncomment the type of sensor in use:
-//#define DHTTYPE DHT22 // DHT 22 (AM2302)
+// #define DHTTYPE DHT22 // DHT 22 (AM2302)
 
 Adafruit_BME280 bme;
 
 // Network credentials
-const char *ssid = "SSID";
-const char *password = "PASSWORD";
+const char *ssid = "Daniels_WiFi";
+const char *password = "Rebel1x1";
 
-// STRUCTURE
+// STRUCTURE convert this to a static structure
 xQueueHandle duty_queue;
 typedef struct
 {
@@ -52,12 +62,12 @@ String readBME280Temperature()
   //  Check if any reads failed and exit early (to try again).
   if (isnan(t))
   {
-    Serial.println("Failed to read from BME280 sensor!");
+    debugln("Failed to read from BME280 sensor!");
     return "--";
   }
   else
   {
-    Serial.println(t);
+    debugln(t);
     return String(t);
   }
 }
@@ -68,12 +78,12 @@ String readBME280Humidity()
   float h = bme.readHumidity();
   if (isnan(h))
   {
-    Serial.println("Failed to read from BME280 sensor!");
+    debugln("Failed to read from BME280 sensor!");
     return "--";
   }
   else
   {
-    Serial.println(h);
+    debugln(h);
     return String(h);
   }
 }
@@ -96,16 +106,16 @@ void TaskAnalogReadA6(void *pvParameters) // This is a task.
     BaseType_t xStatus;
     const TickType_t xTicksToWait = pdMS_TO_TICKS(2000);
     xStatus = xQueueSendToBack(duty_queue, &ADC_READINGS, xTicksToWait);
-    // Serial.println(ADC_READINGS.adc_raw);
+    // debugln(ADC_READINGS.adc_raw);
     if (xStatus != pdPASS)
     {
-      Serial.println("Could not send to the queue.\r\n");
+      debugln("Could not send to the queue.\r\n");
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
-
+// Improve Function logic
 void TaskRelay(void *pvParameters) // This is a task.
 {
   (void)pvParameters;
@@ -114,13 +124,13 @@ void TaskRelay(void *pvParameters) // This is a task.
   {
     if (xQueueReceive(duty_queue, &ADC_READINGS, portMAX_DELAY))
     {
-      // Serial.print("ADC READING RECEIVED BY RELAY TASK: ");
-      Serial.print("ADC Raw: ");
-      Serial.print(ADC_READINGS.adc_raw);
-      Serial.print(" Water: ");
-      Serial.print(ADC_READINGS.soaking);
-      Serial.print(" Autonomous: ");
-      Serial.println(ADC_READINGS.auton);
+      // debug("ADC READING RECEIVED BY RELAY TASK: ");
+      debug("ADC Raw: ");
+      debug(ADC_READINGS.adc_raw);
+      debug(" Water: ");
+      debug(ADC_READINGS.soaking);
+      debug(" Autonomous: ");
+      debugln(ADC_READINGS.auton);
       if (ADC_READINGS.auton == 1) // Autonomous mode is activated, relay is on/off by ADC values
       {
         digitalWrite(GREEN, HIGH);
@@ -179,7 +189,7 @@ void setup()
   status = bme.begin(0x76);
   if (!status)
   {
-    Serial.println("Could not find valid BME280 sensor");
+    debugln("Could not find valid BME280 sensor");
     while (1)
       ;
   }
@@ -190,7 +200,7 @@ void setup()
   // Initialize SPIFFS
   if (!SPIFFS.begin())
   {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    debugln("An Error has occurred while mounting SPIFFS");
     return;
   }
 
@@ -198,10 +208,10 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(1000);
-    Serial.println("Connecting to WiFi..");
+    debugln("Connecting to WiFi..");
   }
   // Print ESP32 Local IP Address
-  Serial.println(WiFi.localIP());
+  debugln(WiFi.localIP());
 
   // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -260,12 +270,11 @@ void setup()
                 inputMessage1 = "No message sent";
                 inputMessage2 = "No message sent";
               }
-              Serial.print("Toggle Switch: ");
-              Serial.print(inputMessage1);
-              Serial.print(" - Set to: ");
-              Serial.println(inputMessage2);
-              request->send(200, "text/plain", "OK");
-            });
+              debug("Toggle Switch: ");
+              debug(inputMessage1);
+              debug(" - Set to: ");
+              debugln(inputMessage2);
+              request->send(200, "text/plain", "OK"); });
 
   // Start server
   server.begin();
