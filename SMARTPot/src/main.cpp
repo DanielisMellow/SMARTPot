@@ -8,7 +8,7 @@
 #include <Wire.h>
 
 // Macros For Debugging
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG == 1
 #define debug(x) Serial.print(x)
 #define debugln(x) Serial.println(x)
@@ -42,7 +42,7 @@ typedef struct
 
 } xData;
 
-xData ADC_READINGS;
+static xData ADC_READINGS;
 
 const char *PARAM_INPUT_1 = "output";
 const char *PARAM_INPUT_2 = "state";
@@ -115,7 +115,7 @@ void TaskAnalogReadA6(void *pvParameters) // This is a task.
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
-// Improve Function logic
+
 void TaskRelay(void *pvParameters) // This is a task.
 {
   (void)pvParameters;
@@ -131,42 +131,39 @@ void TaskRelay(void *pvParameters) // This is a task.
       debug(ADC_READINGS.soaking);
       debug(" Autonomous: ");
       debugln(ADC_READINGS.auton);
-      if (ADC_READINGS.auton == 1) // Autonomous mode is activated, relay is on/off by ADC values
+
+      if (ADC_READINGS.auton != 1) // Autonomous mode is not triggered
       {
+        digitalWrite(GREEN, LOW);
+        if (ADC_READINGS.soaking != false) // Manual water is toggled
+        {
+          // TURN ON WATER PUMP and Blue LED indicator
+          digitalWrite(13, HIGH);
+          digitalWrite(BLUE, HIGH);
+        }
+        else
+        {
+          // TURN OFF WATER PUMP and LED indicator
+          digitalWrite(13, LOW);
+          digitalWrite(BLUE, LOW);
+        }
+      }
+      else
+      {
+        // Toggle Autonomous Green LED indicator (Take ADC Readings Into consideration)
         digitalWrite(GREEN, HIGH);
-        // Soil is Dry and Requires water
+
+        // Soil is Dry: Requires water
         if (ADC_READINGS.adc_raw > 1650)
         {
           digitalWrite(13, HIGH);
           digitalWrite(BLUE, HIGH);
         }
-
-        // Soil has sufficient amounts of water the water pump should be turned off
+        // Soil has sufficient amounts of water: turned water pump off
         else if (ADC_READINGS.adc_raw < 1600)
         {
           digitalWrite(13, LOW);
           digitalWrite(BLUE, LOW);
-        }
-      }
-      else // Autonomous mode is off, relay is controlled by water button
-      {
-        if (ADC_READINGS.soaking == 1)
-        {
-          // TURN ON WATER PUMP
-          digitalWrite(13, HIGH);
-          digitalWrite(BLUE, HIGH);
-        }
-        else if (ADC_READINGS.soaking == 0)
-        {
-          digitalWrite(13, LOW);
-          // TURN OFF WATER PUMP
-          digitalWrite(BLUE, LOW);
-        }
-
-        if (ADC_READINGS.auton == 0)
-        {
-          // digitalWrite(13, LOW);
-          digitalWrite(GREEN, LOW);
         }
       }
     }
@@ -185,8 +182,7 @@ void setup()
   pinMode(GREEN, OUTPUT);
   digitalWrite(GREEN, LOW);
 
-  bool status;
-  status = bme.begin(0x76);
+  bool status = bme.begin(0x76);
   if (!status)
   {
     debugln("Could not find valid BME280 sensor");
