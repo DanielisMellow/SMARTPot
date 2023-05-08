@@ -25,12 +25,7 @@
 
 // Uncomment the type of sensor in use:
 // #define DHTTYPE DHT22 // DHT 22 (AM2302)
-
 Adafruit_BME280 bme;
-
-// Network credentials
-const char *ssid = "Daniels_WiFi";
-const char *password = "Rebel1x1";
 
 // STRUCTURE convert this to a static structure
 xQueueHandle duty_queue;
@@ -44,11 +39,134 @@ typedef struct
 
 static xData ADC_READINGS;
 
-const char *PARAM_INPUT_1 = "output";
-const char *PARAM_INPUT_2 = "state";
+const char *PARAM_INPUT_5 = "output";
+const char *PARAM_INPUT_6 = "state";
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
+
+// Search for parameter in HTTP POST request
+const char *PARAM_INPUT_1 = "ssid";
+const char *PARAM_INPUT_2 = "pass";
+const char *PARAM_INPUT_3 = "ip";
+const char *PARAM_INPUT_4 = "gateway";
+
+// Variables to save values from HTML form
+String ssid;
+String pass;
+String ip;
+String gateway;
+
+// File paths to save input values permanently
+const char *ssidPath = "/ssid.txt";
+const char *passPath = "/pass.txt";
+const char *ipPath = "/ip.txt";
+const char *gatewayPath = "/gateway.txt";
+
+IPAddress localIP;
+// IPAddress localIP(192, 168, 1, 200); // hardcoded
+
+// Set your Gateway IP address
+IPAddress localGateway;
+// IPAddress localGateway(192, 168, 1, 1); //hardcoded
+IPAddress subnet(255, 255, 0, 0);
+
+// Timer variables
+unsigned long previousMillis = 0;
+const long interval = 10000; // interval to wait for Wi-Fi connection (milliseconds)
+
+// Initialize SPIFFS
+void initSPIFFS()
+{
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("An error has occurred while mounting SPIFFS");
+  }
+  Serial.println("SPIFFS mounted successfully");
+}
+
+// Read File from SPIFFS
+String readFile(fs::FS &fs, const char *path)
+{
+  Serial.printf("Reading file: %s\r\n", path);
+
+  File file = fs.open(path);
+  if (!file || file.isDirectory())
+  {
+    Serial.println("- failed to open file for reading");
+    return String();
+  }
+
+  String fileContent;
+  while (file.available())
+  {
+    fileContent = file.readStringUntil('\n');
+    break;
+  }
+  return fileContent;
+}
+
+// Write file to SPIFFS
+void writeFile(fs::FS &fs, const char *path, const char *message)
+{
+  Serial.printf("Writing file: %s\r\n", path);
+
+  File file = fs.open(path, FILE_WRITE);
+  if (!file)
+  {
+    Serial.println("- failed to open file for writing");
+    return;
+  }
+  if (file.print(message))
+  {
+    Serial.println("- file written");
+  }
+  else
+  {
+    Serial.println("- write failed");
+  }
+}
+
+// Initialize WiFi
+bool initWiFi()
+{
+
+  if (ssid == "" || ip == "")
+  {
+    Serial.println("Undefined SSID or IP address.");
+    return false;
+  }
+
+  WiFi.mode(WIFI_STA);
+
+  localIP.fromString(ip.c_str());
+  localGateway.fromString(gateway.c_str());
+
+  if (!WiFi.config(localIP, localGateway, subnet))
+  {
+    Serial.println("STA Failed to configure");
+    return false;
+  }
+
+  WiFi.begin(ssid.c_str(), pass.c_str());
+  Serial.println("Connecting to WiFi...");
+
+  unsigned long currentMillis = millis();
+  previousMillis = currentMillis;
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    currentMillis = millis();
+    if (currentMillis - previousMillis >= interval)
+    {
+      Serial.println("Failed to connect.");
+      return false;
+    }
+  }
+
+  Serial.println(WiFi.localIP());
+  return true;
+}
 
 // FUNCTIONS TO UPDATE STATS
 String readBME280Temperature()
@@ -173,6 +291,7 @@ void TaskRelay(void *pvParameters) // This is a task.
 void setup()
 {
   Serial.begin(115200);
+
   pinMode(RELAY, OUTPUT);
   digitalWrite(RELAY, LOW);
 
@@ -190,66 +309,64 @@ void setup()
       ;
   }
 
-  // Create A Queue
-  duty_queue = xQueueCreate(10, sizeof(xData));
+  initSPIFFS();
 
-  // Initialize SPIFFS
-  if (!SPIFFS.begin())
+  // Load values saved in SPIFFS
+  ssid = readFile(SPIFFS, ssidPath);
+  pass = readFile(SPIFFS, passPath);
+  ip = readFile(SPIFFS, ipPath);
+  gateway = readFile(SPIFFS, gatewayPath);
+  Serial.println(ssid);
+  Serial.println(pass);
+  Serial.println(ip);
+  Serial.println(gateway);
+
+  if (initWiFi())
   {
-    debugln("An Error has occurred while mounting SPIFFS");
-    return;
-  }
+    // Create A Queue
+    duty_queue = xQueueCreate(10, sizeof(xData));
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    debugln("Connecting to WiFi..");
-  }
-  // Print ESP32 Local IP Address
-  debugln(WiFi.localIP());
+    // Route for root / web page
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(SPIFFS, "/index.html"); });
 
-  // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/index.html"); });
+    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(SPIFFS, "/style.css", "text/css"); });
 
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/style.css", "text/css"); });
+    server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(SPIFFS, "/script.js", "text/javascript"); });
 
-  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/script.js", "text/javascript"); });
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send_P(200, "text/plain", readBME280Temperature().c_str()); });
+    server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send_P(200, "text/plain", readBME280Humidity().c_str()); });
 
-  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send_P(200, "text/plain", readBME280Temperature().c_str()); });
-  server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send_P(200, "text/plain", readBME280Humidity().c_str()); });
+    xTaskCreatePinnedToCore(
+        TaskAnalogReadA6, "AnalogReadA6", 2048 // Stack size
+        ,
+        NULL, 1 // Priority
+        ,
+        NULL, 1);
 
-  xTaskCreatePinnedToCore(
-      TaskAnalogReadA6, "AnalogReadA6", 2048 // Stack size
-      ,
-      NULL, 1 // Priority
-      ,
-      NULL, 1);
+    // Now set up two tasks to run independently.
+    xTaskCreatePinnedToCore(
+        TaskRelay, "TaskRelay" // A name just for humans
+        ,
+        1024 // This stack size can be checked & adjusted by reading the Stack Highwater
+        ,
+        NULL, 1 // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+        ,
+        NULL, 1);
 
-  // Now set up two tasks to run independently.
-  xTaskCreatePinnedToCore(
-      TaskRelay, "TaskRelay" // A name just for humans
-      ,
-      1024 // This stack size can be checked & adjusted by reading the Stack Highwater
-      ,
-      NULL, 1 // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      ,
-      NULL, 1);
-
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
               String inputMessage1;
               String inputMessage2;
               // GET input1 value on <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
-              if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2))
+              if (request->hasParam(PARAM_INPUT_5) && request->hasParam(PARAM_INPUT_6))
               {
-                inputMessage1 = request->getParam(PARAM_INPUT_1)->value();
-                inputMessage2 = request->getParam(PARAM_INPUT_2)->value();
+                inputMessage1 = request->getParam(PARAM_INPUT_5)->value();
+                inputMessage2 = request->getParam(PARAM_INPUT_6)->value();
                 //digitalWrite(inputMessage1.toInt(), inputMessage2.toInt());
 
                 if (inputMessage1.toInt() == RELAY)
@@ -272,8 +389,72 @@ void setup()
               debugln(inputMessage2);
               request->send(200, "text/plain", "OK"); });
 
-  // Start server
-  server.begin();
+    // Start server
+    server.begin();
+  }
+  else
+  {
+    // Connect to Wi-Fi network with SSID and password
+    Serial.println("Setting AP (Access Point)");
+    // NULL sets an open Access Point
+    WiFi.softAP("ESP-WIFI-MANAGER", NULL);
+
+    IPAddress IP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.println(IP);
+
+    // Web Server Root URL
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(SPIFFS, "/wifimanager.html", "text/html"); });
+
+    server.serveStatic("/", SPIFFS, "/");
+
+    server.on("/", HTTP_POST, [](AsyncWebServerRequest *request)
+              {
+      int params = request->params();
+      for(int i=0;i<params;i++){
+        AsyncWebParameter* p = request->getParam(i);
+        if(p->isPost()){
+          // HTTP POST ssid value
+          if (p->name() == PARAM_INPUT_1) {
+            ssid = p->value().c_str();
+            Serial.print("SSID set to: ");
+            Serial.println(ssid);
+            // Write file to save value
+            writeFile(SPIFFS, ssidPath, ssid.c_str());
+          }
+          // HTTP POST pass value
+          if (p->name() == PARAM_INPUT_2) {
+            pass = p->value().c_str();
+            Serial.print("Password set to: ");
+            Serial.println(pass);
+            // Write file to save value
+            writeFile(SPIFFS, passPath, pass.c_str());
+          }
+          // HTTP POST ip value
+          if (p->name() == PARAM_INPUT_3) {
+            ip = p->value().c_str();
+            Serial.print("IP Address set to: ");
+            Serial.println(ip);
+            // Write file to save value
+            writeFile(SPIFFS, ipPath, ip.c_str());
+          }
+          // HTTP POST gateway value
+          if (p->name() == PARAM_INPUT_4) {
+            gateway = p->value().c_str();
+            Serial.print("Gateway set to: ");
+            Serial.println(gateway);
+            // Write file to save value
+            writeFile(SPIFFS, gatewayPath, gateway.c_str());
+          }
+          //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+        }
+      }
+      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
+      delay(3000);
+      ESP.restart(); });
+    server.begin();
+  }
 }
 
 void loop()
