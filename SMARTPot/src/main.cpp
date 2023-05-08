@@ -163,7 +163,7 @@ bool initWiFi()
       return false;
     }
   }
-
+  Serial.println("Connected to WiFi");
   Serial.println(WiFi.localIP());
   return true;
 }
