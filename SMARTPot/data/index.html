@@ -1,62 +1,60 @@
 <!DOCTYPE html>
-  <head>
-    <title>SMARTPot</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="data:," />
-    <link rel = "stylesheet" type = "text/css" href = "style.css"/>
-    <link
-      rel="stylesheet"
-      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
-      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
-      crossorigin="anonymous"
-    />
+<head>
+  <title>SmartPot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <link
+    rel="stylesheet"
+    href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+    integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+    crossorigin="anonymous"
+  />
 
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="script.js"></script>
+</head>
+<body>
+  <h2>SmartPot</h2>
+  <fieldset>
+    <h4>AUTO</h4>
+    <label class="switch">
+      <input type="checkbox" onchange="toggleCheckbox(this)" id="0" /><span
+        class="slider"
+      ></span>
+    </label>
 
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="script.js"></script>
+    <h4>WATER</h4>
+    <label class="switch">
+      <input type="checkbox" onchange="toggleCheckbox(this)" id="13" /><span
+        class="slider"
+      ></span>
+    </label>
+  </fieldset>
 
-  </head>
-  <body>
-    <h2>SMARTPot</h2>
-    <fieldset>
-      <h4>AUTO</h4>
-      <label class="switch">
-        <input type="checkbox" onchange="toggleCheckbox(this)" id="0" /><span
-          class="slider"
-        ></span>
-      </label>
+  <fieldset>
+    <p>
+      <i class="fas fa-thermometer-half" style="color: #059e8a"></i>
+      <span class="dht-labels">Temperature</span>
+      <span id="temperature"></span>
+      <sup class="units">&deg;C</sup>
+    </p>
+    <p>
+      <i class="fas fa-tint" style="color: #00add6"></i>
+      <span class="dht-labels">Humidity</span>
+      <span id="humidity"></span>
+      <sup class="units">&percnt;</sup>
+    </p>
+  </fieldset>
 
-      <h4>WATER</h4>
-      <label class="switch">
-        <input type="checkbox" onchange="toggleCheckbox(this)" id="13" /><span
-          class="slider"
-        ></span>
-      </label>
-    </fieldset>
+  <fieldset>
+    <div id="chart-temperature" class="container"></div>
+    <div id="chart-humidity" class="container"></div>
+  </fieldset>
+</body>
 
-    <fieldset>
-      <p>
-        <i class="fas fa-thermometer-half" style="color: #059e8a"></i>
-        <span class="dht-labels">Temperature</span>
-        <span id="temperature"></span>
-        <sup class="units">&deg;C</sup>
-      </p>
-      <p>
-        <i class="fas fa-tint" style="color: #00add6"></i>
-        <span class="dht-labels">Humidity</span>
-        <span id="humidity"></span>
-        <sup class="units">&percnt;</sup>
-      </p>
-    </fieldset>
-
-    <fieldset>
-      <div id="chart-temperature" class="container"></div>
-      <div id="chart-humidity" class="container"></div>
-    </fieldset>
- </body>
-
- <script>
-    var chartT = new Highcharts.Chart({
+<script>
+  var chartT = new Highcharts.Chart({
     chart: { renderTo: "chart-temperature" },
     title: { text: "Temperature" },
     series: [
@@ -98,7 +96,6 @@
     xhttp.send();
   }, 10000);
 
-
   var chartH = new Highcharts.Chart({
     chart: { renderTo: "chart-humidity" },
     title: { text: "Humidity" },
@@ -137,4 +134,4 @@
     xhttp.open("GET", "/humidity", true);
     xhttp.send();
   }, 10000);
- </script>
+</script>

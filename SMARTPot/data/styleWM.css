@@ -1,109 +1,92 @@
+/* Wi-Fi Connection Styles */
+
 html {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-    display: inline-block; 
-    text-align: center;
-  }
-  
-  h1 {
-    font-size: 1.8rem; 
-    color: white;
-  }
-  
-  p { 
-    font-size: 1.4rem;
-  }
-  
-  .topnav { 
-    overflow: hidden; 
-    background-color: #0A1128;
-  }
-  
-  body {  
-    margin: 0;
-  }
-  
-  .content { 
-    padding: 5%;
-  }
-  
-  .card-grid { 
-    max-width: 800px; 
-    margin: 0 auto; 
-    display: grid; 
-    grid-gap: 2rem; 
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-  
-  .card { 
-    background-color: white; 
-    box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);
-  }
-  
-  .card-title { 
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #034078
-  }
-  
-  input[type=submit] {
-    border: none;
-    color: #FEFCFB;
-    background-color: #034078;
-    padding: 15px 15px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    width: 100px;
-    margin-right: 10px;
-    border-radius: 4px;
-    transition-duration: 0.4s;
-    }
-  
-  input[type=submit]:hover {
-    background-color: #1282A2;
-  }
-  
-  input[type=text], input[type=number], select {
-    width: 50%;
-    padding: 12px 20px;
-    margin: 18px;
-    display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
-  
-  label {
-    font-size: 1.2rem; 
-  }
-  .value{
-    font-size: 1.2rem;
-    color: #1282A2;  
-  }
-  .state {
-    font-size: 1.2rem;
-    color: #1282A2;
-  }
-  button {
-    border: none;
-    color: #FEFCFB;
-    padding: 15px 32px;
-    text-align: center;
-    font-size: 16px;
-    width: 100px;
-    border-radius: 4px;
-    transition-duration: 0.4s;
-  }
-  .button-on {
-    background-color: #034078;
-  }
-  .button-on:hover {
-    background-color: #1282A2;
-  }
-  .button-off {
-    background-color: #858585;
-  }
-  .button-off:hover {
-    background-color: #252524;
-  } 
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+  display: inline-block; 
+  text-align: left;
+}
+
+body {
+  display: flex;
+  justify-content: center; /* center horizontally */
+  align-items: center; /* center vertically */
+}
+
+h2 {
+  font-size: 3rem;
+  line-height: 10px;
+  margin-top: 100;
+}
+
+.wifi-connection {
+  background-color: #f2f2f2;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  width: 400px;
+}
+
+.wifi-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.wifi-header h2 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.wifi-cancel {
+  background-color: transparent;
+  border: none;
+  color: #007aff;
+  font-size: 16px;
+}
+
+.wifi-cancel:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.wifi-form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="password"] {
+  background-color: #fff;
+  border: 1px solid #c2c2c2;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.wifi-connect {
+  background-color: #007aff;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  margin-top: 16px;
+  padding: 12px;
+}
+
+.wifi-connect:hover {
+  background-color: #0069d9;
+}
