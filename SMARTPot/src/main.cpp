@@ -80,9 +80,9 @@ void initSPIFFS()
 {
   if (!SPIFFS.begin(true))
   {
-    Serial.println("An error has occurred while mounting SPIFFS");
+    debugln("An error has occurred while mounting SPIFFS");
   }
-  Serial.println("SPIFFS mounted successfully");
+  debugln("SPIFFS mounted successfully");
 }
 
 // Read File from SPIFFS
@@ -93,7 +93,7 @@ String readFile(fs::FS &fs, const char *path)
   File file = fs.open(path);
   if (!file || file.isDirectory())
   {
-    Serial.println("- failed to open file for reading");
+    debugln("- failed to open file for reading");
     return String();
   }
 
@@ -114,16 +114,16 @@ void writeFile(fs::FS &fs, const char *path, const char *message)
   File file = fs.open(path, FILE_WRITE);
   if (!file)
   {
-    Serial.println("- failed to open file for writing");
+    debugln("- failed to open file for writing");
     return;
   }
   if (file.print(message))
   {
-    Serial.println("- file written");
+    debugln("- file written");
   }
   else
   {
-    Serial.println("- write failed");
+    debugln("- write failed");
   }
 }
 
@@ -133,7 +133,7 @@ bool initWiFi()
 
   if (ssid == "" || ip == "")
   {
-    Serial.println("Undefined SSID or IP address.");
+    debugln("Undefined SSID or IP address.");
     return false;
   }
 
@@ -144,12 +144,12 @@ bool initWiFi()
 
   if (!WiFi.config(localIP, localGateway, subnet))
   {
-    Serial.println("STA Failed to configure");
+    debugln("STA Failed to configure");
     return false;
   }
 
   WiFi.begin(ssid.c_str(), pass.c_str());
-  Serial.println("Connecting to WiFi...");
+  debugln("Connecting to WiFi...");
 
   unsigned long currentMillis = millis();
   previousMillis = currentMillis;
@@ -159,12 +159,12 @@ bool initWiFi()
     currentMillis = millis();
     if (currentMillis - previousMillis >= interval)
     {
-      Serial.println("Failed to connect.");
+      debugln("Failed to connect.");
       return false;
     }
   }
-  Serial.println("Connected to WiFi");
-  Serial.println(WiFi.localIP());
+  debugln("Connected to WiFi");
+  debugln(WiFi.localIP());
   return true;
 }
 
@@ -316,10 +316,10 @@ void setup()
   pass = readFile(SPIFFS, passPath);
   ip = readFile(SPIFFS, ipPath);
   gateway = readFile(SPIFFS, gatewayPath);
-  Serial.println(ssid);
-  Serial.println(pass);
-  Serial.println(ip);
-  Serial.println(gateway);
+  debugln(ssid);
+  debugln(pass);
+  debugln(ip);
+  debugln(gateway);
 
   if (initWiFi())
   {
@@ -395,13 +395,13 @@ void setup()
   else
   {
     // Connect to Wi-Fi network with SSID and password
-    Serial.println("Setting AP (Access Point)");
+    debugln("Setting AP (Access Point)");
     // NULL sets an open Access Point
     WiFi.softAP("SmartPot", NULL);
 
     IPAddress IP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
-    Serial.println(IP);
+    debugln(IP);
 
     // Web Server Root URL
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -419,7 +419,7 @@ void setup()
           if (p->name() == PARAM_INPUT_1) {
             ssid = p->value().c_str();
             Serial.print("SSID set to: ");
-            Serial.println(ssid);
+            debugln(ssid);
             // Write file to save value
             writeFile(SPIFFS, ssidPath, ssid.c_str());
           }
@@ -427,7 +427,7 @@ void setup()
           if (p->name() == PARAM_INPUT_2) {
             pass = p->value().c_str();
             Serial.print("Password set to: ");
-            Serial.println(pass);
+            debugln(pass);
             // Write file to save value
             writeFile(SPIFFS, passPath, pass.c_str());
           }
@@ -435,7 +435,7 @@ void setup()
           if (p->name() == PARAM_INPUT_3) {
             ip = p->value().c_str();
             Serial.print("IP Address set to: ");
-            Serial.println(ip);
+            debugln(ip);
             // Write file to save value
             writeFile(SPIFFS, ipPath, ip.c_str());
           }
@@ -443,7 +443,7 @@ void setup()
           if (p->name() == PARAM_INPUT_4) {
             gateway = p->value().c_str();
             Serial.print("Gateway set to: ");
-            Serial.println(gateway);
+            debugln(gateway);
             // Write file to save value
             writeFile(SPIFFS, gatewayPath, gateway.c_str());
           }
