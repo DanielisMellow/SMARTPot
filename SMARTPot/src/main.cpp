@@ -8,7 +8,7 @@
 #include <Wire.h>
 
 // Macros For Debugging
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG == 1
 #define debug(x) Serial.print(x)
 #define debugln(x) Serial.println(x)
@@ -36,36 +36,52 @@ typedef struct
   bool auton = false;
 
 } xData;
-
 static xData ADC_READINGS;
 
-const char *PARAM_INPUT_5 = "output";
-const char *PARAM_INPUT_6 = "state";
+typedef struct
+{
+  const char *OUT = "output";
+  const char *STATE = "state";
+} INTERFACE_PARAMS;
+static INTERFACE_PARAMS interfaceParams;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
 // Search for parameter in HTTP POST request
-const char *PARAM_INPUT_1 = "ssid";
-const char *PARAM_INPUT_2 = "pass";
-const char *PARAM_INPUT_3 = "ip";
-const char *PARAM_INPUT_4 = "gateway";
+typedef struct
+{
+  const char *SSID = "ssid";
+  const char *PASSWORD = "pass";
+  const char *IP = "ip";
+  const char *GATEWAY = "gateway";
+} HTML_WIFI_PARAMS;
+static HTML_WIFI_PARAMS HTMLWifiInputs;
 
 // Variables to save values from HTML form
-String ssid;
-String pass;
-String ip;
-String gateway;
+typedef struct
+{
+  String ssid;
+  String pass;
+  String ip;
+  String gateway;
+} USER_WIFI_DATA;
+
+static USER_WIFI_DATA UserWifiData;
 
 // File paths to save input values permanently
-const char *ssidPath = "/ssid.txt";
-const char *passPath = "/pass.txt";
-const char *ipPath = "/ip.txt";
-const char *gatewayPath = "/gateway.txt";
+typedef struct
+{
+  const char *ssidPath = "/ssid.txt";
+  const char *passPath = "/pass.txt";
+  const char *ipPath = "/ip.txt";
+  const char *gatewayPath = "/gateway.txt";
+
+} FILE_PATHS;
+static FILE_PATHS filePaths;
 
 IPAddress localIP;
 // IPAddress localIP(192, 168, 1, 200); // hardcoded
-
 // Set your Gateway IP address
 IPAddress localGateway;
 // IPAddress localGateway(192, 168, 1, 1); //hardcoded
@@ -131,7 +147,7 @@ void writeFile(fs::FS &fs, const char *path, const char *message)
 bool initWiFi()
 {
 
-  if (ssid == "" || ip == "")
+  if (UserWifiData.ssid == "" || UserWifiData.ip == "")
   {
     debugln("Undefined SSID or IP address.");
     return false;
@@ -139,8 +155,8 @@ bool initWiFi()
 
   WiFi.mode(WIFI_STA);
 
-  localIP.fromString(ip.c_str());
-  localGateway.fromString(gateway.c_str());
+  localIP.fromString(UserWifiData.ip.c_str());
+  localGateway.fromString(UserWifiData.gateway.c_str());
 
   if (!WiFi.config(localIP, localGateway, subnet))
   {
@@ -148,7 +164,7 @@ bool initWiFi()
     return false;
   }
 
-  WiFi.begin(ssid.c_str(), pass.c_str());
+  WiFi.begin(UserWifiData.ssid.c_str(), UserWifiData.pass.c_str());
   debugln("Connecting to WiFi...");
 
   unsigned long currentMillis = millis();
@@ -250,7 +266,7 @@ void TaskRelay(void *pvParameters) // This is a task.
       debug(" Autonomous: ");
       debugln(ADC_READINGS.auton);
 
-      if (ADC_READINGS.auton != 1) // Autonomous mode is not triggered
+      if (ADC_READINGS.auton != true) // Autonomous mode is not triggered
       {
         digitalWrite(GREEN, LOW);
         if (ADC_READINGS.soaking != false) // Manual water is toggled
@@ -312,14 +328,14 @@ void setup()
   initSPIFFS();
 
   // Load values saved in SPIFFS
-  ssid = readFile(SPIFFS, ssidPath);
-  pass = readFile(SPIFFS, passPath);
-  ip = readFile(SPIFFS, ipPath);
-  gateway = readFile(SPIFFS, gatewayPath);
-  debugln(ssid);
-  debugln(pass);
-  debugln(ip);
-  debugln(gateway);
+  UserWifiData.ssid = readFile(SPIFFS, filePaths.ssidPath);
+  UserWifiData.pass = readFile(SPIFFS, filePaths.passPath);
+  UserWifiData.ip = readFile(SPIFFS, filePaths.ipPath);
+  UserWifiData.gateway = readFile(SPIFFS, filePaths.gatewayPath);
+  debugln(UserWifiData.ssid);
+  debugln(UserWifiData.pass);
+  debugln(UserWifiData.ip);
+  debugln(UserWifiData.gateway);
 
   if (initWiFi())
   {
@@ -363,10 +379,10 @@ void setup()
               String inputMessage1;
               String inputMessage2;
               // GET input1 value on <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
-              if (request->hasParam(PARAM_INPUT_5) && request->hasParam(PARAM_INPUT_6))
+              if (request->hasParam(interfaceParams.OUT) && request->hasParam(interfaceParams.STATE))
               {
-                inputMessage1 = request->getParam(PARAM_INPUT_5)->value();
-                inputMessage2 = request->getParam(PARAM_INPUT_6)->value();
+                inputMessage1 = request->getParam(interfaceParams.OUT)->value();
+                inputMessage2 = request->getParam(interfaceParams.STATE)->value();
                 //digitalWrite(inputMessage1.toInt(), inputMessage2.toInt());
 
                 if (inputMessage1.toInt() == RELAY)
@@ -416,41 +432,41 @@ void setup()
         AsyncWebParameter* p = request->getParam(i);
         if(p->isPost()){
           // HTTP POST ssid value
-          if (p->name() == PARAM_INPUT_1) {
-            ssid = p->value().c_str();
+          if (p->name() == HTMLWifiInputs.SSID) {
+            UserWifiData.ssid = p->value().c_str();
             Serial.print("SSID set to: ");
-            debugln(ssid);
+            debugln(UserWifiData.ssid);
             // Write file to save value
-            writeFile(SPIFFS, ssidPath, ssid.c_str());
+            writeFile(SPIFFS, filePaths.ssidPath, UserWifiData.ssid.c_str());
           }
           // HTTP POST pass value
-          if (p->name() == PARAM_INPUT_2) {
-            pass = p->value().c_str();
+          if (p->name() == HTMLWifiInputs.PASSWORD) {
+            UserWifiData.pass = p->value().c_str();
             Serial.print("Password set to: ");
-            debugln(pass);
+            debugln(UserWifiData.pass);
             // Write file to save value
-            writeFile(SPIFFS, passPath, pass.c_str());
+            writeFile(SPIFFS, filePaths.passPath, UserWifiData.pass.c_str());
           }
           // HTTP POST ip value
-          if (p->name() == PARAM_INPUT_3) {
-            ip = p->value().c_str();
+          if (p->name() == HTMLWifiInputs.IP) {
+            UserWifiData.ip = p->value().c_str();
             Serial.print("IP Address set to: ");
-            debugln(ip);
+            debugln(UserWifiData.ip);
             // Write file to save value
-            writeFile(SPIFFS, ipPath, ip.c_str());
+            writeFile(SPIFFS, filePaths.ipPath, UserWifiData.ip.c_str());
           }
           // HTTP POST gateway value
-          if (p->name() == PARAM_INPUT_4) {
-            gateway = p->value().c_str();
+          if (p->name() == HTMLWifiInputs.GATEWAY) {
+            UserWifiData.gateway = p->value().c_str();
             Serial.print("Gateway set to: ");
-            debugln(gateway);
+            debugln(UserWifiData.gateway);
             // Write file to save value
-            writeFile(SPIFFS, gatewayPath, gateway.c_str());
+            writeFile(SPIFFS, filePaths.gatewayPath, UserWifiData.gateway.c_str());
           }
           //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
         }
       }
-      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
+      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + UserWifiData.ip);
       delay(3000);
       ESP.restart(); });
     server.begin();
