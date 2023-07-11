@@ -1,8 +1,8 @@
 # SmartPot
-The SmartPot open source project creates a fully autonomous self-watering flowering pot. 
+The SmartPot is an open-source project that creates a fully autonomous self-watering flowering pot. 
 
 # General Overview
-The microcontroller takes readings from a capacitance soil moisture sensor (CSMS) to determine if the soil is dry and requires watering. After MCU determines the plant needs water, a GPIO pin with a relay trigger a small water pump to water the flowerpot. An additional Temperature and humidity sensor(BME280) will take readings from the plant's environment and display them in a complementary GUI hosted on the ESP32. The GUI allows for additional controls, such as enabling the AUTO mode (self-watering mode based on sensor readings) or a manual watering sequence. The sensor readings are displayed in real-time and as a graphical timelapse. 
+The microcontroller takes readings from a capacitance soil moisture sensor (CSMS) to determine if the soil is dry and requires watering. After MCU determines the plant needs water, a GPIO pin with a relay triggers a small water pump to water the flowerpot. An additional Temperature and humidity sensor(BME280) will take readings from the plant's environment and display them in a complementary GUI hosted on the ESP32. The GUI allows for additional controls, such as enabling the AUTO mode (self-watering mode based on sensor readings) or a manual watering sequence. The sensor readings are displayed in real-time and as a graphical timelapse. 
 
 # Features
   -Status Indication LED(Green-Auto / Blue-Watering)
