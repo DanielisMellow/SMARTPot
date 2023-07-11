@@ -7,7 +7,7 @@ The microcontroller takes readings from a capacitance soil moisture sensor (CSMS
 # Features
 - Status Indication LED(Green-Auto / Blue-Watering)
 - WiFi Manager
-- Solar Powered Battery Bank(Ideal for window seated plants)
+- Compact Design (Suitable for House Plants) 
 - Webpage Graphic User Interface
 
 # Functional Decomposition  
