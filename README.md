@@ -13,13 +13,12 @@ The microcontroller takes readings from a capacitance soil moisture sensor (CSMS
 # Functional Decomposition  
 ![SmartPot-Page-1](https://github.com/DanielisMellow/SMARTPot/assets/82124061/ca4d7b1e-5da4-40e6-b4b0-90f6148438ac)
 
-# PCB 
+# PCB Design
 ![image](https://github.com/DanielisMellow/SMARTPot/assets/82124061/d67f55c3-e573-43b5-8a6f-f3c5e03d56ae)
 
 # User Interface 
 ![GUI](https://user-images.githubusercontent.com/82124061/153277552-153ed56f-00fd-4204-a495-f35f5df36e99.png)
 
 # SmartPot
-![IMG_4085](https://user-images.githubusercontent.com/82124061/153272789-2df4694a-e000-48f3-9959-a7e7cce7b357.jpg)
-
+![IMG_1979](https://github.com/DanielisMellow/SMARTPot/assets/82124061/b0134d8e-4a21-4ad7-b271-f5e96ce93987)
 
