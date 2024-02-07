@@ -1,10 +1,11 @@
+#include "paramStructs.h"
+#include <Adafruit_BME280.h>
+#include <Adafruit_Sensor.h>
 #include <Arduino.h>
-#include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
+#include <WiFi.h>
 #include <Wire.h>
 
 // Macros For Debugging
@@ -23,65 +24,20 @@
 #define BLUE 12
 #define GREEN 14
 
-// Uncomment the type of sensor in use:
-// #define DHTTYPE DHT22 // DHT 22 (AM2302)
-Adafruit_BME280 bme;
-
-// STRUCTURE convert this to a static structure
 xQueueHandle duty_queue;
-typedef struct
-{
-  int adc_raw;
-  bool soaking = false;
-  bool auton = false;
-
-} xData;
 static xData ADC_READINGS;
-
-typedef struct
-{
-  const char *OUT = "output";
-  const char *STATE = "state";
-} INTERFACE_PARAMS;
-static INTERFACE_PARAMS interfaceParams;
+static IPARAMS interfaceParams;
+static HTML_WIFI_PARAMS HTMLWifiInputs;
+static USER_WIFI_DATA UserWifiData;
+static FILE_PATHS filePaths;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
+// Initialize BME sensor
+Adafruit_BME280 bme;
 
-// Search for parameter in HTTP POST request
-typedef struct
-{
-  const char *SSID = "ssid";
-  const char *PASSWORD = "pass";
-  const char *IP = "ip";
-  const char *GATEWAY = "gateway";
-} HTML_WIFI_PARAMS;
-static HTML_WIFI_PARAMS HTMLWifiInputs;
-
-// Variables to save values from HTML form
-typedef struct
-{
-  String ssid;
-  String pass;
-  String ip;
-  String gateway;
-} USER_WIFI_DATA;
-
-static USER_WIFI_DATA UserWifiData;
-
-// File paths to save input values permanently
-typedef struct
-{
-  const char *ssidPath = "/ssid.txt";
-  const char *passPath = "/pass.txt";
-  const char *ipPath = "/ip.txt";
-  const char *gatewayPath = "/gateway.txt";
-
-} FILE_PATHS;
-static FILE_PATHS filePaths;
-
-IPAddress localIP;
 // IPAddress localIP(192, 168, 1, 200); // hardcoded
+IPAddress localIP;
 // Set your Gateway IP address
 IPAddress localGateway;
 // IPAddress localGateway(192, 168, 1, 1); //hardcoded
@@ -89,33 +45,29 @@ IPAddress subnet(255, 255, 0, 0);
 
 // Timer variables
 unsigned long previousMillis = 0;
-const long interval = 10000; // interval to wait for Wi-Fi connection (milliseconds)
+const long interval =
+    10000; // interval to wait for Wi-Fi connection (milliseconds)
 
 // Initialize SPIFFS
-void initSPIFFS()
-{
-  if (!SPIFFS.begin(true))
-  {
+void initSPIFFS() {
+  if (!SPIFFS.begin(true)) {
     debugln("An error has occurred while mounting SPIFFS");
   }
   debugln("SPIFFS mounted successfully");
 }
 
 // Read File from SPIFFS
-String readFile(fs::FS &fs, const char *path)
-{
+String readFile(fs::FS &fs, const char *path) {
   Serial.printf("Reading file: %s\r\n", path);
 
   File file = fs.open(path);
-  if (!file || file.isDirectory())
-  {
+  if (!file || file.isDirectory()) {
     debugln("- failed to open file for reading");
     return String();
   }
 
   String fileContent;
-  while (file.available())
-  {
+  while (file.available()) {
     fileContent = file.readStringUntil('\n');
     break;
   }
@@ -123,32 +75,25 @@ String readFile(fs::FS &fs, const char *path)
 }
 
 // Write file to SPIFFS
-void writeFile(fs::FS &fs, const char *path, const char *message)
-{
+void writeFile(fs::FS &fs, const char *path, const char *message) {
   Serial.printf("Writing file: %s\r\n", path);
 
   File file = fs.open(path, FILE_WRITE);
-  if (!file)
-  {
+  if (!file) {
     debugln("- failed to open file for writing");
     return;
   }
-  if (file.print(message))
-  {
+  if (file.print(message)) {
     debugln("- file written");
-  }
-  else
-  {
+  } else {
     debugln("- write failed");
   }
 }
 
 // Initialize WiFi
-bool initWiFi()
-{
+bool initWiFi() {
 
-  if (UserWifiData.ssid == "" || UserWifiData.ip == "")
-  {
+  if (UserWifiData.ssid == "" || UserWifiData.ip == "") {
     debugln("Undefined SSID or IP address.");
     return false;
   }
@@ -158,8 +103,7 @@ bool initWiFi()
   localIP.fromString(UserWifiData.ip.c_str());
   localGateway.fromString(UserWifiData.gateway.c_str());
 
-  if (!WiFi.config(localIP, localGateway, subnet))
-  {
+  if (!WiFi.config(localIP, localGateway, subnet)) {
     debugln("STA Failed to configure");
     return false;
   }
@@ -170,11 +114,9 @@ bool initWiFi()
   unsigned long currentMillis = millis();
   previousMillis = currentMillis;
 
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  while (WiFi.status() != WL_CONNECTED) {
     currentMillis = millis();
-    if (currentMillis - previousMillis >= interval)
-    {
+    if (currentMillis - previousMillis >= interval) {
       debugln("Failed to connect.");
       return false;
     }
@@ -185,8 +127,7 @@ bool initWiFi()
 }
 
 // FUNCTIONS TO UPDATE STATS
-String readBME280Temperature()
-{
+String readBME280Temperature() {
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   // Read temperature as Celsius (the default)
   float t = bme.readTemperature();
@@ -194,29 +135,22 @@ String readBME280Temperature()
   //  Read temperature as Fahrenheit (isFahrenheit = true)
   //  float t = dht.readTemperature(true);
   //  Check if any reads failed and exit early (to try again).
-  if (isnan(t))
-  {
+  if (isnan(t)) {
     debugln("Failed to read from BME280 sensor!");
     return "--";
-  }
-  else
-  {
+  } else {
     debugln(t);
     return String(t);
   }
 }
 
-String readBME280Humidity()
-{
+String readBME280Humidity() {
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = bme.readHumidity();
-  if (isnan(h))
-  {
+  if (isnan(h)) {
     debugln("Failed to read from BME280 sensor!");
     return "--";
-  }
-  else
-  {
+  } else {
     debugln(h);
     return String(h);
   }
@@ -226,12 +160,10 @@ void TaskAnalogReadA6(void *pvParameters) // This is a task.
 {
   (void)pvParameters;
 
-  while (1)
-  {
+  while (1) {
     ADC_READINGS.adc_raw = 0;
     int nSamples = 15;
-    for (int i = 0; i < nSamples; i++)
-    {
+    for (int i = 0; i < nSamples; i++) {
       ADC_READINGS.adc_raw += analogRead(A6);
     }
 
@@ -241,8 +173,7 @@ void TaskAnalogReadA6(void *pvParameters) // This is a task.
     const TickType_t xTicksToWait = pdMS_TO_TICKS(2000);
     xStatus = xQueueSendToBack(duty_queue, &ADC_READINGS, xTicksToWait);
     // debugln(ADC_READINGS.adc_raw);
-    if (xStatus != pdPASS)
-    {
+    if (xStatus != pdPASS) {
       debugln("Could not send to the queue.\r\n");
     }
 
@@ -254,10 +185,8 @@ void TaskRelay(void *pvParameters) // This is a task.
 {
   (void)pvParameters;
   xData ADC_READINGS;
-  while (1)
-  {
-    if (xQueueReceive(duty_queue, &ADC_READINGS, portMAX_DELAY))
-    {
+  while (1) {
+    if (xQueueReceive(duty_queue, &ADC_READINGS, portMAX_DELAY)) {
       // debug("ADC READING RECEIVED BY RELAY TASK: ");
       debug("ADC Raw: ");
       debug(ADC_READINGS.adc_raw);
@@ -274,28 +203,23 @@ void TaskRelay(void *pvParameters) // This is a task.
           // TURN ON WATER PUMP and Blue LED indicator
           digitalWrite(13, HIGH);
           digitalWrite(BLUE, HIGH);
-        }
-        else
-        {
+        } else {
           // TURN OFF WATER PUMP and LED indicator
           digitalWrite(13, LOW);
           digitalWrite(BLUE, LOW);
         }
-      }
-      else
-      {
-        // Toggle Autonomous Green LED indicator (Take ADC Readings Into consideration)
+      } else {
+        // Toggle Autonomous Green LED indicator (Take ADC Readings Into
+        // consideration)
         digitalWrite(GREEN, HIGH);
 
         // Soil is Dry: Requires water
-        if (ADC_READINGS.adc_raw > 1650)
-        {
+        if (ADC_READINGS.adc_raw > 1650) {
           digitalWrite(13, HIGH);
           digitalWrite(BLUE, HIGH);
         }
         // Soil has sufficient amounts of water: turned water pump off
-        else if (ADC_READINGS.adc_raw < 1600)
-        {
+        else if (ADC_READINGS.adc_raw < 1600) {
           digitalWrite(13, LOW);
           digitalWrite(BLUE, LOW);
         }
@@ -304,8 +228,7 @@ void TaskRelay(void *pvParameters) // This is a task.
   }
 }
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
 
   pinMode(RELAY, OUTPUT);
@@ -318,8 +241,7 @@ void setup()
   digitalWrite(GREEN, LOW);
 
   bool status = bme.begin(0x76);
-  if (!status)
-  {
+  if (!status) {
     debugln("Could not find valid BME280 sensor");
     while (1)
       ;
@@ -337,79 +259,79 @@ void setup()
   debugln(UserWifiData.ip);
   debugln(UserWifiData.gateway);
 
-  if (initWiFi())
-  {
+  if (initWiFi()) {
     // Create A Queue
     duty_queue = xQueueCreate(10, sizeof(xData));
 
     // Route for root / web page
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(SPIFFS, "/index.html"); });
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/index.html");
+    });
 
-    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(SPIFFS, "/style.css", "text/css"); });
+    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/style.css", "text/css");
+    });
 
-    server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(SPIFFS, "/script.js", "text/javascript"); });
+    server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/script.js", "text/javascript");
+    });
 
-    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send_P(200, "text/plain", readBME280Temperature().c_str()); });
-    server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send_P(200, "text/plain", readBME280Humidity().c_str()); });
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send_P(200, "text/plain", readBME280Temperature().c_str());
+    });
+    server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send_P(200, "text/plain", readBME280Humidity().c_str());
+    });
 
-    xTaskCreatePinnedToCore(
-        TaskAnalogReadA6, "AnalogReadA6", 2048 // Stack size
-        ,
-        NULL, 1 // Priority
-        ,
-        NULL, 1);
+    xTaskCreatePinnedToCore(TaskAnalogReadA6, "AnalogReadA6", 2048 // Stack size
+                            ,
+                            NULL, 1 // Priority
+                            ,
+                            NULL, 1);
 
     // Now set up two tasks to run independently.
-    xTaskCreatePinnedToCore(
-        TaskRelay, "TaskRelay" // A name just for humans
-        ,
-        1024 // This stack size can be checked & adjusted by reading the Stack Highwater
-        ,
-        NULL, 1 // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-        ,
-        NULL, 1);
+    xTaskCreatePinnedToCore(TaskRelay, "TaskRelay" // A name just for humans
+                            ,
+                            1024 // This stack size can be checked & adjusted by
+                                 // reading the Stack Highwater
+                            ,
+                            NULL,
+                            1 // Priority, with 3 (configMAX_PRIORITIES - 1)
+                              // being the highest, and 0 being the lowest.
+                            ,
+                            NULL, 1);
 
-    server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-              String inputMessage1;
-              String inputMessage2;
-              // GET input1 value on <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
-              if (request->hasParam(interfaceParams.OUT) && request->hasParam(interfaceParams.STATE))
-              {
-                inputMessage1 = request->getParam(interfaceParams.OUT)->value();
-                inputMessage2 = request->getParam(interfaceParams.STATE)->value();
-                //digitalWrite(inputMessage1.toInt(), inputMessage2.toInt());
+    server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
+      String inputMessage1;
+      String inputMessage2;
+      // GET input1 value on
+      // <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
+      if (request->hasParam(interfaceParams.OUT) &&
+          request->hasParam(interfaceParams.STATE)) {
+        inputMessage1 = request->getParam(interfaceParams.OUT)->value();
+        inputMessage2 = request->getParam(interfaceParams.STATE)->value();
+        // digitalWrite(inputMessage1.toInt(), inputMessage2.toInt());
 
-                if (inputMessage1.toInt() == RELAY)
-                {
-                  ADC_READINGS.soaking = inputMessage2.toInt();
-                }
-                if (inputMessage1.toInt() == AUTO)
-                {
-                  ADC_READINGS.auton = inputMessage2.toInt();
-                }
-              }
-              else
-              {
-                inputMessage1 = "No message sent";
-                inputMessage2 = "No message sent";
-              }
-              debug("Toggle Switch: ");
-              debug(inputMessage1);
-              debug(" - Set to: ");
-              debugln(inputMessage2);
-              request->send(200, "text/plain", "OK"); });
+        if (inputMessage1.toInt() == RELAY) {
+          ADC_READINGS.soaking = inputMessage2.toInt();
+        }
+        if (inputMessage1.toInt() == AUTO) {
+          ADC_READINGS.auton = inputMessage2.toInt();
+        }
+      } else {
+        inputMessage1 = "No message sent";
+        inputMessage2 = "No message sent";
+      }
+      debug("Toggle Switch: ");
+      debug(inputMessage1);
+      debug(" - Set to: ");
+      debugln(inputMessage2);
+      request->send(200, "text/plain", "OK");
+    });
 
     // Start server
     server.begin();
-  }
-  else
-  {
+  } else {
     // Connect to Wi-Fi network with SSID and password
     debugln("Setting AP (Access Point)");
     // NULL sets an open Access Point
@@ -420,17 +342,17 @@ void setup()
     debugln(IP);
 
     // Web Server Root URL
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(SPIFFS, "/wifimanager.html", "text/html"); });
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/wifimanager.html", "text/html");
+    });
 
     server.serveStatic("/", SPIFFS, "/");
 
-    server.on("/", HTTP_POST, [](AsyncWebServerRequest *request)
-              {
+    server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
       int params = request->params();
-      for(int i=0;i<params;i++){
-        AsyncWebParameter* p = request->getParam(i);
-        if(p->isPost()){
+      for (int i = 0; i < params; i++) {
+        AsyncWebParameter *p = request->getParam(i);
+        if (p->isPost()) {
           // HTTP POST ssid value
           if (p->name() == HTMLWifiInputs.SSID) {
             UserWifiData.ssid = p->value().c_str();
@@ -461,19 +383,24 @@ void setup()
             Serial.print("Gateway set to: ");
             debugln(UserWifiData.gateway);
             // Write file to save value
-            writeFile(SPIFFS, filePaths.gatewayPath, UserWifiData.gateway.c_str());
+            writeFile(SPIFFS, filePaths.gatewayPath,
+                      UserWifiData.gateway.c_str());
           }
-          //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+          // Serial.printf("POST[%s]: %s\n", p->name().c_str(),
+          // p->value().c_str());
         }
       }
-      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + UserWifiData.ip);
+      request->send(200, "text/plain",
+                    "Done. ESP will restart, connect to your router and go to "
+                    "IP address: " +
+                        UserWifiData.ip);
       delay(3000);
-      ESP.restart(); });
+      ESP.restart();
+    });
     server.begin();
   }
 }
 
-void loop()
-{
+void loop() {
   // put your main code here, to run repeatedly:
 }
