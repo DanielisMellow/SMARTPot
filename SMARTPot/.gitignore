@@ -7,3 +7,4 @@
 .gcc-flags.json
 .ccls
 compile_commands.json
+.cache
