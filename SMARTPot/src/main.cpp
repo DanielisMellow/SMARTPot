@@ -8,7 +8,7 @@
 #include <WiFi.h>
 #include <Wire.h>
 
-// Macros For Debugging
+// Change DEBUG from 1 to 0 to remove Serial Monitor prints
 #define DEBUG 1
 #if DEBUG == 1
 #define debug(x) Serial.print(x)
@@ -18,9 +18,8 @@
 #define debugln(x)
 #endif
 
-// Define
-#define RELAY 13
 #define AUTO 0
+#define RELAY 13
 #define BLUE 12
 #define GREEN 14
 
@@ -36,11 +35,11 @@ AsyncWebServer server(80);
 // Initialize BME sensor
 Adafruit_BME280 bme;
 
-// IPAddress localIP(192, 168, 1, 200); // hardcoded
+// IPAddress localIP
 IPAddress localIP;
 // Set your Gateway IP address
 IPAddress localGateway;
-// IPAddress localGateway(192, 168, 1, 1); //hardcoded
+// IPAddress localGateway
 IPAddress subnet(255, 255, 0, 0);
 
 // Timer variables
@@ -104,7 +103,7 @@ bool initWiFi() {
   localGateway.fromString(UserWifiData.gateway.c_str());
 
   if (!WiFi.config(localIP, localGateway, subnet)) {
-    debugln("STA Failed to configure");
+    debugln("Failed to configure");
     return false;
   }
 
